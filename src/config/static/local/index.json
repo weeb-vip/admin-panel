@@ -1,0 +1,5 @@
+{
+  "api_host": "http://localhost:3000",
+  "graphql_host": "http://localhost:3000/graphql",
+  "flagsmith_environment_id": "QtDHxDTFu8oCZWmqLXFuDd"
+}
