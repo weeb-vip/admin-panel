@@ -104,6 +104,26 @@ export type ApiInfo = {
   scraperAPI: ScraperApi;
 };
 
+export type ChangePasswordInput = {
+  new_password: Scalars['String'];
+  old_password: Scalars['String'];
+};
+
+export type CreateUserInput = {
+  email?: InputMaybe<Scalars['String']>;
+  firstname: Scalars['String'];
+  id: Scalars['String'];
+  language: Language;
+  lastname: Scalars['String'];
+  username: Scalars['String'];
+};
+
+export type Credentials = {
+  __typename?: 'Credentials';
+  refresh_token: Scalars['String'];
+  token: Scalars['String'];
+};
+
 export type Episode = {
   __typename?: 'Episode';
   /** Episode air date */
@@ -124,6 +144,17 @@ export type Episode = {
   updatedAt: Scalars['String'];
 };
 
+export type Key = {
+  __typename?: 'Key';
+  body: Scalars['String'];
+  id: Scalars['String'];
+};
+
+export enum Language {
+  En = 'EN',
+  Th = 'TH'
+}
+
 export type Link = {
   __typename?: 'Link';
   /** animeid Link */
@@ -138,10 +169,57 @@ export type Link = {
   thetvdbID: Scalars['String'];
 };
 
+export type LoginInput = {
+  password: Scalars['String'];
+  username: Scalars['String'];
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
+  CreatUser: User;
+  CreateSession?: Maybe<SigninResult>;
+  RefreshToken: SigninResult;
+  Register: RegisterResult;
+  RequestPasswordReset: Scalars['Boolean'];
+  UpdateUserDetails: User;
+  registerPublicKey?: Maybe<Key>;
   /** Save link */
   saveLink: Link;
+};
+
+
+export type MutationCreatUserArgs = {
+  input: CreateUserInput;
+};
+
+
+export type MutationCreateSessionArgs = {
+  input?: InputMaybe<LoginInput>;
+};
+
+
+export type MutationRefreshTokenArgs = {
+  token: Scalars['String'];
+};
+
+
+export type MutationRegisterArgs = {
+  input: RegisterInput;
+};
+
+
+export type MutationRequestPasswordResetArgs = {
+  input: RequestPasswordResetInput;
+};
+
+
+export type MutationUpdateUserDetailsArgs = {
+  input: UpdateUserInput;
+};
+
+
+export type MutationRegisterPublicKeyArgs = {
+  publicKey: Scalars['String'];
 };
 
 
@@ -151,10 +229,12 @@ export type MutationSaveLinkArgs = {
 
 export type Query = {
   __typename?: 'Query';
+  UserDetails: User;
   /** Get anime by ID */
   anime: Anime;
   /** AnimeAPI info */
   apiInfo: ApiInfo;
+  availabilityByUsername: Scalars['Boolean'];
   /** Get currently airing anime */
   currentlyAiring?: Maybe<Array<Anime>>;
   /** Search for anime in the database */
@@ -167,6 +247,7 @@ export type Query = {
   getEpisodesFromTheTVDB?: Maybe<Array<TheTvdbEpisode>>;
   /** Saved Links */
   getSavedLinks?: Maybe<Array<Link>>;
+  keys: Array<Key>;
   /** Get most popular anime with a response limit */
   mostPopularAnime?: Maybe<Array<Anime>>;
   /** Get newest anime with a response limit */
@@ -182,6 +263,11 @@ export type Query = {
 
 export type QueryAnimeArgs = {
   id: Scalars['ID'];
+};
+
+
+export type QueryAvailabilityByUsernameArgs = {
+  username: Scalars['String'];
 };
 
 
@@ -229,6 +315,21 @@ export type QueryTopRatedAnimeArgs = {
   limit?: InputMaybe<Scalars['Int']>;
 };
 
+export type RegisterInput = {
+  password: Scalars['String'];
+  username: Scalars['String'];
+};
+
+export type RegisterResult = {
+  __typename?: 'RegisterResult';
+  id: Scalars['String'];
+};
+
+export type RequestPasswordResetInput = {
+  email: Scalars['String'];
+  username: Scalars['String'];
+};
+
 export type SaveLinkInput = {
   /** Animeid Link to save */
   animeID: Scalars['String'];
@@ -244,6 +345,27 @@ export type ScraperApi = {
   __typename?: 'ScraperAPI';
   /** Version of event scraper-api service */
   version: Scalars['String'];
+};
+
+export type Session = {
+  __typename?: 'Session';
+  access_token: Scalars['String'];
+  refresh_token: Scalars['String'];
+};
+
+export type SessionDetails = {
+  __typename?: 'SessionDetails';
+  id: Scalars['String'];
+  ip_address: Scalars['String'];
+  token: Scalars['String'];
+  user_agent: Scalars['String'];
+  user_id: Scalars['String'];
+};
+
+export type SigninResult = {
+  __typename?: 'SigninResult';
+  Credentials: Credentials;
+  id: Scalars['ID'];
 };
 
 export type TheTvdbAnime = {
@@ -297,6 +419,25 @@ export type TranslationTuple = {
   value?: Maybe<Scalars['String']>;
 };
 
+export type UpdateUserInput = {
+  email?: InputMaybe<Scalars['String']>;
+  firstname?: InputMaybe<Scalars['String']>;
+  language?: InputMaybe<Language>;
+  lastname?: InputMaybe<Scalars['String']>;
+  username?: InputMaybe<Scalars['String']>;
+};
+
+export type User = {
+  __typename?: 'User';
+  active_sessions: Array<SessionDetails>;
+  email?: Maybe<Scalars['String']>;
+  firstname: Scalars['String'];
+  id: Scalars['ID'];
+  language: Language;
+  lastname: Scalars['String'];
+  username: Scalars['String'];
+};
+
 export type SearchTheTvdbQueryVariables = Exact<{
   input: TheTvdbSearchInput;
 }>;
@@ -330,9 +471,33 @@ export type SyncLinkQueryVariables = Exact<{
 
 export type SyncLinkQuery = { __typename?: 'Query', syncLink: boolean };
 
+export type AnimeQueryVariables = Exact<{
+  animeId: Scalars['ID'];
+}>;
+
+
+export type AnimeQuery = { __typename?: 'Query', anime: { __typename?: 'Anime', id: string, anidbid?: string | null, titleEn?: string | null, titleJp?: string | null, titleRomaji?: string | null, titleKanji?: string | null, titleSynonyms?: Array<string> | null, description?: string | null, imageUrl?: string | null, tags?: Array<string> | null, studios?: Array<string> | null, animeStatus?: string | null, episodeCount?: number | null, duration?: string | null, rating?: string | null, startDate?: any | null, endDate?: any | null, broadcast?: string | null, source?: string | null, licensors?: Array<string> | null, ranking?: number | null, createdAt: string, updatedAt: string } };
+
+export type SearchTheTvdb2QueryVariables = Exact<{
+  input?: InputMaybe<TheTvdbSearchInput>;
+}>;
+
+
+export type SearchTheTvdb2Query = { __typename?: 'Query', searchTheTVDB?: Array<{ __typename?: 'TheTVDBAnime', id: string, title: string, link: string, image?: string | null, year?: string | null, studios?: Array<string> | null, genres?: Array<string> | null, translations?: Array<{ __typename?: 'TranslationTuple', key?: string | null, value?: string | null } | null> | null }> | null };
+
+export type GetEpisodesFromTheTvdb2QueryVariables = Exact<{
+  thetvdbId: Scalars['String'];
+}>;
+
+
+export type GetEpisodesFromTheTvdb2Query = { __typename?: 'Query', getEpisodesFromTheTVDB?: Array<{ __typename?: 'TheTVDBEpisode', id: string, title: string, episodeNumber: number, seasonNumber: number, link: string, image?: string | null, description?: string | null, airDate?: string | null }> | null };
+
 
 export const SearchTheTvdbDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"searchTheTVDB"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"TheTVDBSearchInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"searchTheTVDB"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"year"}},{"kind":"Field","name":{"kind":"Name","value":"image"}},{"kind":"Field","name":{"kind":"Name","value":"studios"}},{"kind":"Field","name":{"kind":"Name","value":"genres"}},{"kind":"Field","name":{"kind":"Name","value":"translations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}}]}}]}}]} as unknown as DocumentNode<SearchTheTvdbQuery, SearchTheTvdbQueryVariables>;
 export const SaveLinkDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"saveLink"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SaveLinkInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"saveLink"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"animeID"}},{"kind":"Field","name":{"kind":"Name","value":"thetvdbID"}},{"kind":"Field","name":{"kind":"Name","value":"season"}}]}}]}}]} as unknown as DocumentNode<SaveLinkMutation, SaveLinkMutationVariables>;
 export const GetEpisodesFromTheTvdbDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getEpisodesFromTheTVDB"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"thetvdbID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getEpisodesFromTheTVDB"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"thetvdbID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"thetvdbID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"seasonNumber"}},{"kind":"Field","name":{"kind":"Name","value":"episodeNumber"}},{"kind":"Field","name":{"kind":"Name","value":"image"}},{"kind":"Field","name":{"kind":"Name","value":"airDate"}}]}}]}}]} as unknown as DocumentNode<GetEpisodesFromTheTvdbQuery, GetEpisodesFromTheTvdbQueryVariables>;
 export const GetSavedLinksDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getSavedLinks"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getSavedLinks"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"animeID"}},{"kind":"Field","name":{"kind":"Name","value":"thetvdbID"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"season"}}]}}]}}]} as unknown as DocumentNode<GetSavedLinksQuery, GetSavedLinksQueryVariables>;
 export const SyncLinkDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"syncLink"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"linkId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"syncLink"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"linkID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"linkId"}}}]}]}}]} as unknown as DocumentNode<SyncLinkQuery, SyncLinkQueryVariables>;
+export const AnimeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Anime"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"animeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"anime"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"animeId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"anidbid"}},{"kind":"Field","name":{"kind":"Name","value":"titleEn"}},{"kind":"Field","name":{"kind":"Name","value":"titleJp"}},{"kind":"Field","name":{"kind":"Name","value":"titleRomaji"}},{"kind":"Field","name":{"kind":"Name","value":"titleKanji"}},{"kind":"Field","name":{"kind":"Name","value":"titleSynonyms"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"imageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"studios"}},{"kind":"Field","name":{"kind":"Name","value":"animeStatus"}},{"kind":"Field","name":{"kind":"Name","value":"episodeCount"}},{"kind":"Field","name":{"kind":"Name","value":"duration"}},{"kind":"Field","name":{"kind":"Name","value":"rating"}},{"kind":"Field","name":{"kind":"Name","value":"startDate"}},{"kind":"Field","name":{"kind":"Name","value":"endDate"}},{"kind":"Field","name":{"kind":"Name","value":"broadcast"}},{"kind":"Field","name":{"kind":"Name","value":"source"}},{"kind":"Field","name":{"kind":"Name","value":"licensors"}},{"kind":"Field","name":{"kind":"Name","value":"ranking"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<AnimeQuery, AnimeQueryVariables>;
+export const SearchTheTvdb2Document = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchTheTVDB2"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"TheTVDBSearchInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"searchTheTVDB"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"link"}},{"kind":"Field","name":{"kind":"Name","value":"image"}},{"kind":"Field","name":{"kind":"Name","value":"year"}},{"kind":"Field","name":{"kind":"Name","value":"translations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}},{"kind":"Field","name":{"kind":"Name","value":"studios"}},{"kind":"Field","name":{"kind":"Name","value":"genres"}}]}}]}}]} as unknown as DocumentNode<SearchTheTvdb2Query, SearchTheTvdb2QueryVariables>;
+export const GetEpisodesFromTheTvdb2Document = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEpisodesFromTheTVDB2"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"thetvdbId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getEpisodesFromTheTVDB"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"thetvdbID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"thetvdbId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"episodeNumber"}},{"kind":"Field","name":{"kind":"Name","value":"seasonNumber"}},{"kind":"Field","name":{"kind":"Name","value":"link"}},{"kind":"Field","name":{"kind":"Name","value":"image"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"airDate"}}]}}]}}]} as unknown as DocumentNode<GetEpisodesFromTheTvdb2Query, GetEpisodesFromTheTvdb2QueryVariables>;

@@ -18,6 +18,9 @@ const documents = {
     "\n  query getEpisodesFromTheTVDB($thetvdbID: String!) {\n    getEpisodesFromTheTVDB(thetvdbID: $thetvdbID) {\n      title\n      seasonNumber\n      episodeNumber\n      image\n      \n      airDate\n    }\n  }\n": types.GetEpisodesFromTheTvdbDocument,
     "\n  query getSavedLinks {\n    getSavedLinks {\n      id\n      animeID\n      thetvdbID\n      name\n      season\n    }\n  }\n": types.GetSavedLinksDocument,
     "\n  query syncLink($linkId: String!) {\n    syncLink(linkID: $linkId)\n  }\n": types.SyncLinkDocument,
+    "\n    query Anime($animeId: ID!) {\n        anime(id: $animeId) {\n            id\n            anidbid\n            titleEn\n            titleJp\n            titleRomaji\n            titleKanji\n            titleSynonyms\n            description\n            imageUrl\n            tags\n            studios\n            animeStatus\n            episodeCount\n            duration\n            rating\n            startDate\n            endDate\n            broadcast\n            source\n            licensors\n            ranking\n            createdAt\n            updatedAt\n        }\n    }": types.AnimeDocument,
+    "\n    query SearchTheTVDB2($input: TheTVDBSearchInput) {\n        searchTheTVDB(input: $input) {\n            id\n            title\n            link\n            image\n            year\n            translations {\n                key\n                value\n            }\n            studios\n            genres\n        }\n    }\n": types.SearchTheTvdb2Document,
+    "\n    query GetEpisodesFromTheTVDB2($thetvdbId: String!) {\n        getEpisodesFromTheTVDB(thetvdbID: $thetvdbId) {\n            id\n            title\n            episodeNumber\n            seasonNumber\n            link\n            image\n            description\n            airDate\n        }\n    }": types.GetEpisodesFromTheTvdb2Document,
 };
 
 /**
@@ -54,6 +57,18 @@ export function graphql(source: "\n  query getSavedLinks {\n    getSavedLinks {\
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  query syncLink($linkId: String!) {\n    syncLink(linkID: $linkId)\n  }\n"): (typeof documents)["\n  query syncLink($linkId: String!) {\n    syncLink(linkID: $linkId)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n    query Anime($animeId: ID!) {\n        anime(id: $animeId) {\n            id\n            anidbid\n            titleEn\n            titleJp\n            titleRomaji\n            titleKanji\n            titleSynonyms\n            description\n            imageUrl\n            tags\n            studios\n            animeStatus\n            episodeCount\n            duration\n            rating\n            startDate\n            endDate\n            broadcast\n            source\n            licensors\n            ranking\n            createdAt\n            updatedAt\n        }\n    }"): (typeof documents)["\n    query Anime($animeId: ID!) {\n        anime(id: $animeId) {\n            id\n            anidbid\n            titleEn\n            titleJp\n            titleRomaji\n            titleKanji\n            titleSynonyms\n            description\n            imageUrl\n            tags\n            studios\n            animeStatus\n            episodeCount\n            duration\n            rating\n            startDate\n            endDate\n            broadcast\n            source\n            licensors\n            ranking\n            createdAt\n            updatedAt\n        }\n    }"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n    query SearchTheTVDB2($input: TheTVDBSearchInput) {\n        searchTheTVDB(input: $input) {\n            id\n            title\n            link\n            image\n            year\n            translations {\n                key\n                value\n            }\n            studios\n            genres\n        }\n    }\n"): (typeof documents)["\n    query SearchTheTVDB2($input: TheTVDBSearchInput) {\n        searchTheTVDB(input: $input) {\n            id\n            title\n            link\n            image\n            year\n            translations {\n                key\n                value\n            }\n            studios\n            genres\n        }\n    }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n    query GetEpisodesFromTheTVDB2($thetvdbId: String!) {\n        getEpisodesFromTheTVDB(thetvdbID: $thetvdbId) {\n            id\n            title\n            episodeNumber\n            seasonNumber\n            link\n            image\n            description\n            airDate\n        }\n    }"): (typeof documents)["\n    query GetEpisodesFromTheTVDB2($thetvdbId: String!) {\n        getEpisodesFromTheTVDB(thetvdbID: $thetvdbId) {\n            id\n            title\n            episodeNumber\n            seasonNumber\n            link\n            image\n            description\n            airDate\n        }\n    }"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

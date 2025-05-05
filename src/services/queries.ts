@@ -3,13 +3,20 @@ import {searchResults} from "./api/search";
 import request from "graphql-request";
 import {
 
-  GetEpisodesFromTheTvdbQuery, GetSavedLinksQuery,
+  GetEpisodesFromTheTvdbQuery, GetSavedLinksQuery, QuerySearchTheTvdbArgs,
   SaveLinkMutation,
   SearchTheTvdbQuery, SyncLinkQuery
 } from "../gql/graphql";
 import {getConfig} from "../config";
 import configApi from "./api/config";
-import {getSavedLinksQuery, getTheTVDBEpisodes, querySync, saveLink, searchTheTVDB} from "./api/graphql/queries";
+import {
+  getSavedLinksQuery,
+  getTheTVDBEpisodes, queryAnime, queryGetEpisodesFromTheTvdb,
+  querySearchTheTVDB,
+  querySync,
+  saveLink,
+  searchTheTVDB
+} from "./api/graphql/queries";
 
 export const fetchSearchResults = (query: string) => ({
   queryKey: ["search"],
@@ -21,7 +28,7 @@ export const fetchSearchResults = (query: string) => ({
 export const getSearchResults = (query: string) => ({
   queryKey: ["searchResults", query],
   // @ts-ignore
-  queryFn: async () => request<SearchTheTvdbQuery>(global.config.graphql_host, searchTheTVDB, {
+  queryFn: async () => request<SearchTheTvdbQuery>(global.config.graphql_host, querySearchTheTVDB, {
     input: {
       query: query
     }
@@ -66,3 +73,20 @@ export const querySyncLink = () => ({
     linkId: linkId
   })
 })
+
+export const getAnimeById = (animeId: string) => {
+  // @ts-ignore
+  return request(global.config.graphql_host, queryAnime, {animeId})
+}
+
+export const searchTheTVDB = (args: QuerySearchTheTvdbArgs) => {
+  console.log(args)
+  // @ts-ignore
+  return request(global.config.graphql_host, querySearchTheTVDB, args)
+}
+
+export const getEpisodesFromTheTvdb = (thetvdbId: string) => {
+  console.log("DERP", thetvdbId)
+  // @ts-ignore
+  return request(global.config.graphql_host, queryGetEpisodesFromTheTvdb, {thetvdbId})
+}

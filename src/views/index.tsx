@@ -3,7 +3,7 @@ import Loader from "../components/Loader";
 
 import {graphql} from '../gql'
 import request from "graphql-request";
-import {GetEpisodesFromTheTvdbQuery, SearchTheTvdbQuery} from "../gql/graphql";
+import {Anime, GetEpisodesFromTheTvdbQuery, SearchTheTvdbQuery, TheTvdbAnime} from "../gql/graphql";
 import {
   fetchTheTVDBEpisodes,
   getSavedLinks,
@@ -17,14 +17,17 @@ import useDebounce from "../components/Search/useDebounce";
 import Search from "./components/search/search";
 import Autocomplete from "../components/Autocomplete";
 import Button, {ButtonColor} from "../components/Button";
+import {format, parse as ParseDate, parseISO} from "date-fns";
+import {findSameEntity} from "../services/autolink";
 
 
 function Index() {
-  const [selectedMALAnime, setSelectedMALAnime] = useState<string>('')
+  const [selectedMALAnime, setSelectedMALAnime] = useState<any>({})
   const [selectedMALAnimeTitle, setSelectedMALAnimeTitle] = useState<string>('')
-  const [selectedTVDBAnime, setSelectedTVDBAnime] = useState<string>('')
+  const [selectedTVDBAnime, setSelectedTVDBAnime] = useState<TheTvdbAnime>({} as TheTvdbAnime)
   const [selectedSeason, setSelectedSeason] = useState<number>(1)
-  const saveLinkMutation = useMutation(mutateSaveLink(selectedMALAnime, selectedTVDBAnime, selectedSeason, selectedMALAnimeTitle).queryFn)
+  const saveLinkMutation = useMutation(mutateSaveLink(selectedMALAnime.id, selectedTVDBAnime.id, selectedSeason, selectedMALAnimeTitle).queryFn)
+  const [autolinkInProgress, setAutolinkInProgress] = useState(false)
 
   const query = useQuery({
     ...getSavedLinks(),
@@ -40,7 +43,7 @@ function Index() {
     data: theTVDBEpisodes,
     isLoading: theTVDBEpisodesIsLoading,
   } = useQuery<GetEpisodesFromTheTvdbQuery>({
-    ...fetchTheTVDBEpisodes(selectedTVDBAnime),
+    ...fetchTheTVDBEpisodes(selectedTVDBAnime.id),
     enabled: Boolean(selectedTVDBAnime)
   })
 
@@ -61,29 +64,72 @@ function Index() {
     query.refetch()
   }
 
-  const syncAll = async (links) => {
-    for (let link of links) {
+  const syncAll = async () => {
+
+    console.log(savedLinks?.getSavedLinks)
+    for (let link of savedLinks?.getSavedLinks) {
       await querySyncLink().queryFn(link.id)
     }
   }
 
+  const attemptAutoLink = async () => {
+    setAutolinkInProgress(true)
+    const animeId = selectedMALAnime.id
+    await findSameEntity(animeId).then((res) => {
+      setAutolinkInProgress(false)
+      console.log(res)
+      if (res.item) {
+        setSelectedTVDBAnime(res.item)
+        setSelectedSeason(parseInt(res.season, 10))
+      }
+    })
+
+  }
+
   return (
     <div className={"flex flex-col w-full h-96"}>
-      <div className={"flex flex-row w-full h-96"}>
-      <span className={"w-1/2"}>
+      <div className={"flex flex-row w-full"}>
+      <span className={"w-auto"}>
         <h1 className={"text-4xl font-bold"}>Selected</h1>
-        <div>
-        <span>MAL ID: {selectedMALAnime}</span>
-          </div>
-        <div>
-        <span>THE TVDB ID: {selectedTVDBAnime}</span>
+        <div className={"flex flex-row space-x-8"}>
+          <div className={"flex flex-col"}>
+          <span>MAL:</span>
+          <span className={"whitespace-nowrap"}>{selectedMALAnime.id}</span>
+          <span className={"whitespace-nowrap"}>{selectedMALAnime.title_en}</span>
+          <span
+            className={"whitespace-nowrap"}>{selectedMALAnime.start_date ? format(parseISO(selectedMALAnime.start_date), 'yyyy-MM-dd') : null}</span>
+          <span><img
+            src={`https://cdn.weeb.vip/weeb/${selectedMALAnime.id}`}
+            alt={selectedMALAnime.name}
+            style={{height: '250px'}}
+            className={"aspect-2/3 m-2"}
+            onError={({currentTarget}) => {
+              currentTarget.onerror = null; // prevents looping
+              currentTarget.src = "/assets/not found.jpg";
+            }}
+          /></span>
+        </div>
+        <div className={"flex flex-col w-40"}>
+          <span>THE TVDB</span>
+          <span>{selectedTVDBAnime.id}</span>
+          <span>{selectedTVDBAnime.translations?.filter(translation => translation.key === "eng").map(translation => translation.value)}</span>
+          <span><img style={{height: '250px'}}
+                     className={"aspect-2/3 m-2"}
+                     src={selectedTVDBAnime.image} alt={selectedTVDBAnime.title}
+                     onError={({currentTarget}) => {
+                       currentTarget.onerror = null; // prevents looping
+                       currentTarget.src = "/assets/not found.jpg";
+                     }}/>
+          </span>
+          <span>Selected Season: {selectedSeason ? selectedSeason : "unkown"}</span>
+       </div>
         </div>
       </span>
         <div className={"w-full flex flex-col"}>
           <h1 className={"text-4xl font-bold"}>Search</h1>
           <Autocomplete
             selectedFunction={(value) => {
-              setSelectedMALAnime(value.id)
+              setSelectedMALAnime(value)
               setSelectedMALAnimeTitle(value.title_en)
             }}
           />
@@ -91,7 +137,7 @@ function Index() {
         <div className={"w-full flex flex-col"}>
           <h1 className={"text-4xl font-bold"}>Search</h1>
           <Search<SearchTheTvdbQuery>
-            selectFunction={(value) => setSelectedTVDBAnime(value.id)}
+            selectFunction={(value) => setSelectedTVDBAnime(value)}
             searchFunction={getSearchResults}
             mapFunction={(data) => (
               <>
@@ -119,7 +165,7 @@ function Index() {
                 ))}</>
             )}/>
         </div>
-        <div className={"w-full flex flex-col overflow-auto"}>
+        <div className={"w-full flex flex-col overflow-auto h-96"}>
           <h1 className={"text-4xl font-bold"}>Episodes</h1>
           {theTVDBEpisodesIsLoading ? (
             <Loader/>
@@ -146,7 +192,7 @@ function Index() {
               <tbody>
               {theTVDBEpisodes?.getEpisodesFromTheTVDB?.map((episode) => {
                 console.log(episode)
-                const airdate = episode.airDate ? new Date(episode.airDate) : null
+                const airdate = episode.airDate ? ParseDate(episode.airDate, 'yyyy-MM-dd', new Date()) : null
                 const formattedAirdate = airdate && airdate instanceof Date ? airdate.toDateString() : "TBA"
 
                 return (
@@ -195,12 +241,22 @@ function Index() {
             saveLink()
           }}/>
         </div>
+        {!autolinkInProgress ? (
+        <div className={"w-full flex flex-col"}>
+          <Button color={ButtonColor.blue} showLabel={true} type={"submit"} label={"Attempt AutoLink"} onClick={() => {
+            attemptAutoLink()
+          }}/>
+        </div>
+        ) : (
+        <Loader/>
+        )}
       </div>
       <div className={"flex flex-col w-full"}>
         <h1 className={"text-4xl font-bold"}>Saved Links</h1>
         <Button color={ButtonColor.blue} showLabel={true} type={"submit"} label={"Sync all"} onClick={() => {
-          syncAll(savedLinks?.getSavedLinksyarn)
+          syncAll()
         }}/>
+
         {savedLinksIsLoading ? (
           <Loader/>
         ) : (
