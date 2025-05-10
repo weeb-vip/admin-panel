@@ -3,20 +3,34 @@ import {searchResults} from "./api/search";
 import request from "graphql-request";
 import {
 
-  GetEpisodesFromTheTvdbQuery, GetSavedLinksQuery, QuerySearchTheTvdbArgs,
+  GetEpisodesFromTheTvdbQuery, GetSavedLinksQuery, LoginInput, QuerySearchTheTvdbArgs, RegisterInput, RegisterResult,
   SaveLinkMutation,
-  SearchTheTvdbQuery, SyncLinkQuery
+  SearchTheTvdbQuery, SigninResult, SyncLinkQuery, UpdateUserInput
 } from "../gql/graphql";
-import {getConfig} from "../config";
-import configApi from "./api/config";
 import {
   getSavedLinksQuery,
-  getTheTVDBEpisodes, queryAnime, queryGetEpisodesFromTheTvdb,
+  getTheTVDBEpisodes,
+  mutateUpdateUserDetails,
+  mutationCreateSession,
+  mutationRefreshToken,
+  queryAnime,
+  queryGetEpisodesFromTheTvdb,
   querySearchTheTVDB,
   querySync,
+  queryUserDetails,
   saveLink,
   searchTheTVDB
 } from "./api/graphql/queries";
+
+export const AuthenticatedClient = () => {
+  const token = localStorage.getItem("authToken");
+  // @ts-ignore
+  return new GraphQLClient(global.config.graphql_host, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  })
+}
 
 export const fetchSearchResults = (query: string) => ({
   queryKey: ["search"],
@@ -38,7 +52,7 @@ export const getSearchResults = (query: string) => ({
 export const mutateSaveLink = (animeID: string, tvdbId: string, season: number, name: string) => ({
   queryKey: ["saveLink", animeID, tvdbId, season],
   // @ts-ignore
-  queryFn: async () => request<SaveLinkMutation>(global.config.graphql_host, saveLink, {
+  queryFn: async () => AuthenticatedClient().request<SaveLinkMutation>(saveLink, {
     input: {
       animeID: animeID,
       thetvdbID: tvdbId,
@@ -59,7 +73,7 @@ export const fetchTheTVDBEpisodes = (thetvdbID: string) => ({
 export const getSavedLinks = () => ({
   queryKey: ["savedLinks"],
   queryFn: async () => {
-    const data = await request<GetSavedLinksQuery>(global.config.graphql_host, getSavedLinksQuery)
+    const data = await AuthenticatedClient().request<GetSavedLinksQuery>(getSavedLinksQuery)
     // return the data
     data.getSavedLinks?.reverse()
     return data
@@ -90,3 +104,53 @@ export const getEpisodesFromTheTvdb = (thetvdbId: string) => {
   // @ts-ignore
   return request(global.config.graphql_host, queryGetEpisodesFromTheTvdb, {thetvdbId})
 }
+
+
+export const register = () => ({
+  mutationFn: async (input: { input: RegisterInput }): Promise<RegisterResult> => {
+    // @ts-ignore
+    const response = await request(global.config.graphql_host, mutationRegister, input);
+    return response.Register;
+  }
+})
+
+export const login = () => ({
+  mutationFn: async (input: { input: LoginInput }) => {
+    // @ts-ignore
+    const response = await request(global.config.graphql_host, mutationCreateSession, input);
+    return response.CreateSession;
+  }
+})
+
+export const getUser = () => ({
+  queryKey: ["user"],
+  queryFn: async (): Promise<User> => {
+    const response = await AuthenticatedClient().request(queryUserDetails);
+    return response.UserDetails;
+  }
+})
+
+export const refreshTokenSimple = async (): Promise<SigninResult> => {
+  // get token from local storage
+  const authtoken = localStorage.getItem("authToken");
+  // extract token from authtoken jwt
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-expect-error
+  const payload = JSON.parse(atob(authtoken.split('.')[1]));
+  // extract refresh_token from payload
+  const refreshToken = payload.refresh_token;
+  console.log("Refreshing token...", refreshToken);
+
+  const input = {token: refreshToken};
+  const response = await AuthenticatedClient().request(mutationRefreshToken, input);
+  return response.RefreshToken
+}
+
+export const updateUserDetails = async () => ({
+  queryFn: async (user: UpdateUserInput) => {
+    const response = await AuthenticatedClient().request(mutateUpdateUserDetails, {
+      input: user
+    });
+    return response.UpdateUserDetails;
+  }
+})

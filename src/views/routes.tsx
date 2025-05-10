@@ -6,6 +6,7 @@ import {
 import Header from "../components/Header";
 import DefaultLayout from "../layouts/default";
 import FullWidthLayout from "../layouts/fullWidth";
+import AuthHandler from "../auth";
 // import ProtectedAuth from './components/protectedRoute'
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
   return (
     <Router>
       <Header/>
+      <AuthHandler/>
       <main>
         <Routes>
           <Route path="/" element={<DefaultLayout><Home/></DefaultLayout>}/>
