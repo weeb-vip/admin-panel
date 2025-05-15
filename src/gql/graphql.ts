@@ -44,6 +44,7 @@ export type Anime = {
   imageUrl?: Maybe<Scalars['String']>;
   /** Anime licensors */
   licensors?: Maybe<Array<Scalars['String']>>;
+  nextEpisode?: Maybe<Episode>;
   /** Anime rank */
   ranking?: Maybe<Scalars['Int']>;
   /** Anime rating */

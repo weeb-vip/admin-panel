@@ -1,6 +1,6 @@
 import api from "./api";
 import {searchResults} from "./api/search";
-import request from "graphql-request";
+import request, {GraphQLClient} from "graphql-request";
 import {
 
   GetEpisodesFromTheTvdbQuery, GetSavedLinksQuery, LoginInput, QuerySearchTheTvdbArgs, RegisterInput, RegisterResult,
@@ -83,7 +83,7 @@ export const getSavedLinks = () => ({
 export const querySyncLink = () => ({
   queryKey: ["syncLink"],
   // @ts-ignore
-  queryFn: async (linkId: string) => request<SyncLinkQuery>(global.config.graphql_host, querySync, {
+  queryFn: async (linkId: string) => AuthenticatedClient().request<SyncLinkQuery>(querySync, {
     linkId: linkId
   })
 })
