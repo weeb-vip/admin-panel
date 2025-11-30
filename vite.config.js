@@ -31,10 +31,10 @@ export default defineConfig({
         react(),
     ],
     server: {
-        port: 8081,
+        port: 4321,
         proxy: {
             "/config.json": {
-                target: "http://localhost:8081",
+                target: "http://localhost:4321",
                 changeOrigin: true,
                 rewrite: (path) => `src/config/static/${configName}/index.json`,
             },

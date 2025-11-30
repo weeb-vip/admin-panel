@@ -14,9 +14,11 @@ import {
   mutationCreateSession,
   mutationRefreshToken,
   queryAnime,
+  queryAnimeBySeasons,
   queryGetEpisodesFromTheTvdb,
   querySearchTheTVDB,
   querySync,
+  querySyncIDs,
   queryUserDetails,
   saveLink,
   searchTheTVDB
@@ -88,10 +90,27 @@ export const querySyncLink = () => ({
   })
 })
 
+export const querySyncAllIDs = () => ({
+  queryKey: ["syncIDs"],
+  queryFn: async () => AuthenticatedClient().request(querySyncIDs)
+})
+
 export const getAnimeById = (animeId: string) => {
   // @ts-ignore
   return request(global.config.graphql_host, queryAnime, {animeId})
 }
+
+export const getAnimeBySeason = (season: string) => ({
+  queryKey: ["animeBySeason", season],
+  queryFn: async () => {
+    // @ts-ignore
+    console.log('Fetching anime for season:', season, 'from:', global.config?.graphql_host);
+    // @ts-ignore
+    const result = await request(global.config.graphql_host, queryAnimeBySeasons, { season, limit: 500 });
+    console.log('Anime by season result:', result);
+    return result;
+  }
+})
 
 export const searchTheTVDB = (args: QuerySearchTheTvdbArgs) => {
   console.log(args)

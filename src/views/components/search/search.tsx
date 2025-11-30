@@ -29,7 +29,7 @@ function Search<T>({searchFunction, mapFunction, selectFunction}: { selectFuncti
             displayValue={(value) => value?.title}
             onChange={(event) => setQuery(event.target.value)}
           />
-          <ComboboxOptions anchor="bottom" className="border empty:invisible">
+          <ComboboxOptions anchor="bottom" className="border empty:invisible max-h-60 overflow-y-auto bg-white shadow-lg rounded-md z-[200] absolute">
             {mapFunction(data)}
           </ComboboxOptions>
         </Combobox>

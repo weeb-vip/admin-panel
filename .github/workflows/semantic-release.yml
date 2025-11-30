@@ -1,0 +1,134 @@
+name: Semantic Release
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # Run tests first
+  test:
+    name: Run Tests
+    uses: ./.github/workflows/test.yml
+
+  e2e:
+    name: Run E2E Tests
+    uses: ./.github/workflows/e2e-tests.yml
+
+  release:
+    needs: [test, e2e]  # Only run release after tests pass
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          persist-credentials: false # <--- this
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - uses: actions/cache@v4
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+      - name: Install dependencies
+        run: corepack enable && yarn set version stable && yarn install
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@v4
+        id: semantic
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+      - name: Check if release was created
+        id: check_release
+        run: |
+          git fetch --tags
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+
+          if [[ -n "$LATEST_TAG" && "$LATEST_TAG" != "$PREV_TAG" ]]; then
+            echo "RELEASE_VERSION=$LATEST_TAG" >> $GITHUB_ENV
+            echo "RELEASE_CREATED=true" >> $GITHUB_ENV
+            echo "✅ New release created: $LATEST_TAG"
+          else
+            echo "RELEASE_CREATED=false" >> $GITHUB_ENV
+            echo "ℹ️ No new release created (likely chore/ci/docs commit)"
+          fi
+      # Note: Auto-update of deployment tags disabled due to workflow file permissions
+      # To update tags, run: yarn update-deployment-tags
+      # This can be done manually or via a separate workflow without branch protection
+      - name: Set up QEMU
+        if: env.RELEASE_CREATED == 'true'
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        if: env.RELEASE_CREATED == 'true'
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        if: env.RELEASE_CREATED == 'true'
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ secrets.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: set tag
+        if: env.RELEASE_CREATED == 'true'
+        run: |
+          export TAG=$(echo $RELEASE_VERSION | sed 's/v//')
+          echo "tag=$TAG" >> $GITHUB_ENV
+      - name: Build and push
+        if: env.RELEASE_CREATED == 'true'
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.REGISTRY }}/weeb-vip/admin-panel:${{ env.tag }}
+          build-args: |
+            VITE_APP_VERSION=${{ env.RELEASE_VERSION }}
+      - uses: actions/checkout@v3
+        if: env.RELEASE_CREATED == 'true'
+      - name: Set env
+        if: env.RELEASE_CREATED == 'true'
+        run: |
+          git fetch --tags
+          export GITHUB_REF_NAME=$(git describe --tags --abbrev=0)
+          echo "RELEASE_VERSION=$GITHUB_REF_NAME" >> $GITHUB_ENV
+      - name: Set env
+        if: env.RELEASE_CREATED == 'true'
+        run: |
+          echo "REPO_NAME=${GITHUB_REPOSITORY#*/}" >> $GITHUB_ENV
+      - name: checkout argocd repo
+        if: env.RELEASE_CREATED == 'true'
+        uses: actions/checkout@v3
+        with:
+          repository: 'weeb-vip/weeb-argocd'
+          token: ${{ secrets.ACCESS_TOKEN }}
+          path: 'argocd'
+      - name: deploy to argocd
+        if: env.RELEASE_CREATED == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          REPO_NAME: ${{ env.REPO_NAME }}
+        # pull argocd repo and push to argocd
+        run: |
+          RELEASE_VERSION=$(echo $RELEASE_VERSION | sed 's/v//')
+          cd argocd && find . -type f -name '*.yaml' -print0 | xargs -0 sed -E -i 's/(tag:[[:space:]]).*( # '"$REPO_NAME"')/\1'"$RELEASE_VERSION"'\2/'
+          git config --global user.email "noreply@weeb.vip"
+          git config --global user.name "weeb-vip"
+          git add .
+          git commit -m "feat: $REPO_NAME $RELEASE_VERSION"
+          git push origin main
+      - name: Summary
+        run: |
+          if [[ "${{ env.RELEASE_CREATED }}" == "true" ]]; then
+            echo "🎉 Release ${{ env.RELEASE_VERSION }} created successfully!"
+            echo "✅ Docker image built and pushed"
+            echo "✅ ArgoCD deployment updated"
+          else
+            echo "ℹ️ No release created (commit type: chore/ci/docs/etc.)"
+            echo "⏭️ Skipped Docker build and ArgoCD update"
+          fi
+
+#      - name: Release
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+#        run: npx semantic-release

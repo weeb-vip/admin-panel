@@ -60,6 +60,12 @@ export const querySync = graphql(/* GraphQL */`
   }
 `)
 
+export const querySyncIDs = graphql(/* GraphQL */`
+  query syncIDs {
+    syncIDs
+  }
+`)
+
 export const queryAnime = gql`
     query Anime($animeId: ID!) {
         anime(id: $animeId) {
@@ -188,6 +194,25 @@ export const mutateUpdateUserDetails = graphql(`
             username
             language
             email
+        }
+    }
+`)
+
+export const queryAnimeBySeasons = graphql(`
+    query AnimeBySeasons($season: Season!, $limit: Int) {
+        animeBySeasons(season: $season, limit: $limit) {
+            id
+            titleEn
+            titleJp
+            titleRomaji
+            startDate
+            endDate
+            imageUrl
+            episodeCount
+            animeStatus
+            description
+            studios
+            tags
         }
     }
 `)

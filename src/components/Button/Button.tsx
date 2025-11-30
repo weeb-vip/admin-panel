@@ -1,6 +1,7 @@
 enum ButtonColor {
   blue = 'blue',
   red = 'red',
+  green = 'green',
   transparent = 'transparent',
   none = 'none'
 }
@@ -21,12 +22,14 @@ function Button ({color, showLabel, label, onClick, icon, type, disabled, classN
   const colorClasses = {
     blue: `bg-blue-600 hover:bg-blue-700 focus:ring-blue-500`,
     red: `bg-red-600 hover:bg-red-700 focus:ring-red-500`,
+    green: `bg-green-600 hover:bg-green-700 focus:ring-green-500`,
     transparent: `bg-transparent hover:bg-gray-100 focus:ring-gray-500 border-gray-300 shadow-sm hover:shadow-md`,
     none: ``
   }
   const textColor = {
     blue: `text-white`,
     red: `text-white`,
+    green: `text-white`,
     transparent: `text-gray-700`,
     none: ``
   }
@@ -34,6 +37,7 @@ function Button ({color, showLabel, label, onClick, icon, type, disabled, classN
   const disabledClasses = {
     blue: `bg-blue-400 hover:bg-blue-400`,
     red: `bg-red-400 hover:bg-red-400`,
+    green: `bg-green-400 hover:bg-green-400`,
     transparent: `bg-gray-400 hover:bg-gray-400`,
     none: ``
   }

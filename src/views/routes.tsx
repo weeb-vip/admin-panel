@@ -13,6 +13,7 @@ export default function App() {
   const Home = React.lazy(() => import('./index'))
   const Search = React.lazy(() => import('./search'))
   const Show = React.lazy(() => import('./show'))
+  const SeasonalLinking = React.lazy(() => import('./seasonal-linking'))
   return (
     <Router>
       <Header/>
@@ -21,6 +22,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<DefaultLayout><Home/></DefaultLayout>}/>
           <Route path="/search" element={<DefaultLayout><Search/></DefaultLayout>}/>
+          <Route path="/seasonal" element={<DefaultLayout><SeasonalLinking/></DefaultLayout>}/>
           <Route path="/show/:id" element={<FullWidthLayout><Show /></FullWidthLayout>}/>
           <Route path="/show/:id/custom" element={<FullWidthLayout><Show /></FullWidthLayout>}/>
           <Route path="*" element={<div>Not found</div>}/>

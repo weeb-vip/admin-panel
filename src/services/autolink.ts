@@ -1,67 +1,129 @@
 import {getAnimeById, getEpisodesFromTheTvdb, searchTheTVDB} from "./queries";
 import {format, parse, parseISO} from "date-fns";
 
-export const findSameEntity = async (animeId: string)=>
-{
+export const findSameEntity = async (animeId: string) => {
   const anime = await getAnimeById(animeId).then((res) => {
     // @ts-ignore
     return res.anime
   })
-  console.log("Anime: ", anime.titleEn)
-  const queryWithoutSeasonAndNumber = anime.titleEn.replace(/(season|s\d+|\d+)/gi, "").trim()
-  console.log("Query: ", queryWithoutSeasonAndNumber)
-  const tvdb = await searchTheTVDB({
-    input: {
-      query: queryWithoutSeasonAndNumber,
+
+  console.log("Anime data:", {
+    titleEn: anime.titleEn,
+    titleJp: anime.titleJp,
+    titleRomaji: anime.titleRomaji,
+    titleKanji: anime.titleKanji
+  });
+
+  // Generate search variants in order of preference
+  const searchVariants = [];
+
+  // 1. English title (original and cleaned)
+  if (anime.titleEn) {
+    searchVariants.push({
+      title: anime.titleEn,
+      type: 'English (original)',
+      query: anime.titleEn
+    });
+    const cleanedEn = anime.titleEn.replace(/(season|s\d+|\d+)/gi, "").trim();
+    if (cleanedEn !== anime.titleEn) {
+      searchVariants.push({
+        title: anime.titleEn,
+        type: 'English (cleaned)',
+        query: cleanedEn
+      });
     }
-  }).then((res) => {
-console.log("RES:", res)
-    // @ts-ignore
-    return res.searchTheTVDB
-  })
-  if (!tvdb) {
-    console.log("No results found", tvdb)
-    return
   }
 
-  for (const item of tvdb) {
-    if (!item?.id) {
-      console.log("No id found")
-      continue
+  // 2. Romaji title (often better for international titles)
+  if (anime.titleRomaji && anime.titleRomaji !== anime.titleEn) {
+    searchVariants.push({
+      title: anime.titleRomaji,
+      type: 'Romaji (original)',
+      query: anime.titleRomaji
+    });
+    const cleanedRomaji = anime.titleRomaji.replace(/(season|s\d+|\d+)/gi, "").trim();
+    if (cleanedRomaji !== anime.titleRomaji) {
+      searchVariants.push({
+        title: anime.titleRomaji,
+        type: 'Romaji (cleaned)',
+        query: cleanedRomaji
+      });
     }
-    console.log("ID", item.id)
-    const match = await getSeasonsAndStartDates(item.id).then((res) => {
+  }
+
+  // 3. Japanese title as last resort
+  if (anime.titleJp && anime.titleJp !== anime.titleEn && anime.titleJp !== anime.titleRomaji) {
+    searchVariants.push({
+      title: anime.titleJp,
+      type: 'Japanese',
+      query: anime.titleJp
+    });
+  }
+
+  console.log("Search variants to try:", searchVariants);
+
+  // Try each search variant until we find a match
+  for (const variant of searchVariants) {
+    console.log(`Trying ${variant.type}: "${variant.query}"`);
+
+    const tvdb = await searchTheTVDB({
+      input: {
+        query: variant.query,
+      }
+    }).then((res) => {
+      console.log(`Results for ${variant.type}:`, res);
       // @ts-ignore
-      // find if a season start date matches with the airdate from anime
-      for (const key in res) {
+      return res.searchTheTVDB
+    });
 
-        if (!Object.prototype.hasOwnProperty.call(res, key)) {
+    if (!tvdb || tvdb.length === 0) {
+      console.log(`No results found for ${variant.type}`);
+      continue;
+    }
 
-          continue;
+    // Check each TVDB result for date matches
+    for (const item of tvdb) {
+      if (!item?.id) {
+        console.log("No id found")
+        continue
+      }
+      console.log("ID", item.id)
+      const match = await getSeasonsAndStartDates(item.id).then((res) => {
+        // @ts-ignore
+        // find if a season start date matches with the airdate from anime
+        for (const key in res) {
+          if (!Object.prototype.hasOwnProperty.call(res, key)) {
+            continue;
+          }
+
+          console.log("ANIME", anime)
+          // get only year, month and day
+          const seasonStart = format(res[key].start, 'yyyy-MM-dd')
+          const animeStart = format(parseISO(anime.startDate), 'yyyy-MM-dd')
+
+          // check if start matches anime start date
+          const matches = seasonStart === animeStart
+          if (matches) {
+            return {item, season: key}
+          }
         }
+      })
 
-        console.log("ANIME", anime)
-        // get only year, month and day
-        const seasonStart = format(res[key].start, 'yyyy-MM-dd')
-        const animeStart = format(parseISO(anime.startDate), 'yyyy-MM-dd')
-
-        // check if start matches anime start date
-        const matches = seasonStart === animeStart
-        if (matches) {
-
-          return {item, season: key}
+      if (match) {
+        // Add search method information to the result
+        console.log(`✅ Match found using ${variant.type}: "${variant.query}"`);
+        return {
+          ...match,
+          searchMethod: variant.type,
+          searchQuery: variant.query,
+          originalTitle: variant.title
         }
       }
-
-    })
-
-
-    if (match) {
-
-      return match
     }
   }
 
+  // No matches found with any search variant
+  console.log("❌ No matches found with any search variant");
   return null
 
 }

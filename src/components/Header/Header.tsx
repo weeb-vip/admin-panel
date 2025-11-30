@@ -41,6 +41,9 @@ function Header() {
             </div>
           </Link>
           <span className="text-xl font-normal">Anime</span>
+          <Link to={"/seasonal"} className="text-blue-600 hover:text-blue-800 font-medium">
+            Seasonal Linking
+          </Link>
         </div>
         <div className="flex flex-row items-center space-x-4">
 
