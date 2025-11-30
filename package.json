@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/weeb-vip/weeb-frontend.git"
+    "url": "git+https://github.com/weeb-vip/admin-panel.git"
   },
   "dependencies": {
     "@algolia/autocomplete-js": "^1.9.2",
