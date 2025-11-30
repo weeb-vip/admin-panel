@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: false # <--- this
+          token: ${{ secrets.ACCESS_TOKEN }}
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -75,9 +75,13 @@ jobs:
           tags: ${{ secrets.REGISTRY }}/weeb-vip/admin-panel:${{ env.tag }}
           build-args: |
             VITE_APP_VERSION=${{ env.RELEASE_VERSION }}
-      - uses: actions/checkout@v3
+      - name: Re-checkout after Docker build
+        uses: actions/checkout@v4
         if: env.RELEASE_CREATED == 'true'
-      - name: Set env
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.ACCESS_TOKEN }}
+      - name: Set release version from tag
         if: env.RELEASE_CREATED == 'true'
         run: |
           git fetch --tags
