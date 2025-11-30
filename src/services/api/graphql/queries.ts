@@ -92,6 +92,16 @@ export const queryAnime = gql`
             ranking
             createdAt
             updatedAt
+            episodes {
+                id
+                episodeNumber
+                titleEn
+                titleJp
+                synopsis
+                airDate
+                createdAt
+                updatedAt
+            }
         }
     }`
 

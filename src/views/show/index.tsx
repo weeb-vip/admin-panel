@@ -1,6 +1,7 @@
 import {useLocation, useParams} from "react-router-dom";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {fetchDetails} from "../../services/queries";
+import {AnimeQuery} from "../../gql/graphql";
 import Loader from "../../components/Loader";
 import {SeriesDetails} from "../../services/api/details";
 import Tables from "./components/Episodes";
@@ -10,7 +11,6 @@ import Tabs from "../../components/Tabs";
 import Artworks from "./components/Artworks";
 import Characters from "./components/Characters";
 import Trailers from "./components/Trailers";
-import {GetAnimeDetailsByIdQuery} from "../../gql/graphql";
 
 function formatUpdatedAt(date?: string): string {
     if (!date) {
@@ -32,7 +32,7 @@ function Index() {
         data: show,
         isLoading: showIsLoading,
 
-    } = useQuery<GetAnimeDetailsByIdQuery>({
+    } = useQuery<AnimeQuery>({
         ...(fetchDetails(id || "")),
         enabled: id !== undefined
     })
@@ -93,7 +93,7 @@ function Index() {
                                 <h2 className="text-xl font-bold pt-4">Tags</h2>
                                 <div className={"flex flex-row flex-wrap space-x-4 space-y-4 space-x-reverse"}>
                                     <div className={"hidden -ml-4"}></div>
-                                    {show?.anime.tags?.map((tag) => (
+                                    {show?.anime.tags?.map((tag: string) => (
                                         <Tag tag={`${tag}`}/>
                                     ))}
                                 </div>

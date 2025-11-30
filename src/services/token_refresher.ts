@@ -90,7 +90,7 @@ export class TokenRefresher {
       console.log('Refreshing token...');
       const newTokenResponse = await this.refreshFunction();
       console.log('Token refreshed successfully.');
-      const newToken = newTokenResponse.Credentials.token
+      const newToken = newTokenResponse.Credentials.token ?? '';
 
       this.storeAuthToken(newToken);
       this.start(newToken); // Restart the process with the new token

@@ -26,7 +26,7 @@ function Search<T>({searchFunction, mapFunction, selectFunction}: { selectFuncti
           <ComboboxInput
             aria-label="Assignee"
             className="rounded-full w-64 py-2 px-3 pl-10 text-sm leading-5 text-gray-900 outline-none border border-gray-200 focus:border-gray-400 active:border-gray-400"
-            displayValue={(value) => value?.title}
+            displayValue={(value: any) => value?.title}
             onChange={(event) => setQuery(event.target.value)}
           />
           <ComboboxOptions anchor="bottom" className="border empty:invisible max-h-60 overflow-y-auto bg-white shadow-lg rounded-md z-[200] absolute">

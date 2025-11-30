@@ -30,11 +30,11 @@ export default function LoginRegisterModal({ closeFn }: LoginRegisterModalProps)
     ...login(),
     // @ts-ignore
     onSuccess: (response: SigninResult, _variables: LoginInput) => {
-      localStorage.setItem("authToken", response.Credentials.token);
-      localStorage.setItem("refreshToken", response.Credentials.refresh_token);
+      localStorage.setItem("authToken", response.Credentials.token ?? '');
+      localStorage.setItem("refreshToken", response.Credentials.refresh_token ?? '');
       setLoggedIn(true);
       // @ts-ignore
-      TokenRefresher.getInstance(refreshTokenSimple).start(response.Credentials.token);
+      TokenRefresher.getInstance(refreshTokenSimple).start(response.Credentials.token ?? '');
       if (closeFn) {
         closeFn();
       }

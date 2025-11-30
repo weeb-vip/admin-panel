@@ -49,7 +49,7 @@ function Header() {
 
           <div className={'relative'}>
             <Autocomplete
-
+              selectedFunction={(item) => navigate(`/show/${item.id ? encodeURIComponent(item.id) : ''}`)}
             />
           </div>
 

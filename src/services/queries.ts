@@ -2,10 +2,10 @@ import api from "./api";
 import {searchResults} from "./api/search";
 import request, {GraphQLClient} from "graphql-request";
 import {
-
+  AnimeQuery,
   GetEpisodesFromTheTvdbQuery, GetSavedLinksQuery, LoginInput, QuerySearchTheTvdbArgs, RegisterInput, RegisterResult,
   SaveLinkMutation,
-  SearchTheTvdbQuery, SigninResult, SyncLinkQuery, UpdateUserInput
+  SearchTheTvdbQuery, SigninResult, SyncLinkQuery, UpdateUserInput, User
 } from "../gql/graphql";
 import {
   getSavedLinksQuery,
@@ -21,7 +21,7 @@ import {
   querySyncIDs,
   queryUserDetails,
   saveLink,
-  searchTheTVDB
+  searchTheTVDB as searchTheTVDBQuery
 } from "./api/graphql/queries";
 
 export const AuthenticatedClient = () => {
@@ -100,6 +100,14 @@ export const getAnimeById = (animeId: string) => {
   return request(global.config.graphql_host, queryAnime, {animeId})
 }
 
+export const fetchDetails = (animeId: string) => ({
+  queryKey: ["animeDetails", animeId],
+  queryFn: async (): Promise<AnimeQuery> => {
+    // @ts-ignore
+    return request(global.config.graphql_host, queryAnime, {animeId})
+  }
+})
+
 export const getAnimeBySeason = (season: string) => ({
   queryKey: ["animeBySeason", season],
   queryFn: async () => {
@@ -128,15 +136,15 @@ export const getEpisodesFromTheTvdb = (thetvdbId: string) => {
 export const register = () => ({
   mutationFn: async (input: { input: RegisterInput }): Promise<RegisterResult> => {
     // @ts-ignore
-    const response = await request(global.config.graphql_host, mutationRegister, input);
+    const response = await request(global.config.graphql_host, mutationRegister, input) as { Register: RegisterResult };
     return response.Register;
   }
 })
 
 export const login = () => ({
-  mutationFn: async (input: { input: LoginInput }) => {
+  mutationFn: async (input: { input: LoginInput }): Promise<SigninResult> => {
     // @ts-ignore
-    const response = await request(global.config.graphql_host, mutationCreateSession, input);
+    const response = await request(global.config.graphql_host, mutationCreateSession, input) as { CreateSession: SigninResult };
     return response.CreateSession;
   }
 })

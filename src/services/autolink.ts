@@ -141,7 +141,7 @@ console.log("THETVDBID", tvdbid)
   }
 
   // get season start times
-  const seasons = episodes.reduce((acc, episode) => {
+  const seasons = episodes.reduce((acc: Record<string, { start: Date; end: Date }>, episode: { seasonNumber: number; airDate?: string | null }) => {
     const season = episode.seasonNumber.toString();
     const airDate = episode.airDate;
 
@@ -151,13 +151,13 @@ console.log("THETVDBID", tvdbid)
       if (!acc[season]) {
         acc[season] = { start: parsedDate, end: parsedDate };
       } else {
-        if (airDate < acc[season].start) acc[season].start = parsedDate;
-        if (airDate > acc[season].end) acc[season].end = parsedDate;
+        if (parsedDate < acc[season].start) acc[season].start = parsedDate;
+        if (parsedDate > acc[season].end) acc[season].end = parsedDate;
       }
     }
 
     return acc;
-  }, {} as Record<string, { start: Date; end: Date }>);
+  }, {});
 
 
   return seasons

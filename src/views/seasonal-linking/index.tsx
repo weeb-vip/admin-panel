@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { request } from 'graphql-request';
 import { queryAnimeBySeasons } from '../../services/api/graphql/queries';
-import { AnimeBySeasonsQuery, Season, TheTvdbAnime } from '../../gql/graphql';
+import { AnimeBySeasonsQuery, TheTvdbAnime } from '../../gql/graphql';
 import { findSameEntity } from '../../services/autolink';
 import { mutateSaveLink, fetchTheTVDBEpisodes, getAnimeBySeason, getSavedLinks, querySyncLink } from '../../services/queries';
 import Button, { ButtonColor } from '../../components/Button';
@@ -105,7 +105,7 @@ function SeasonalLinking() {
       filterType: 'text',
       getFilterValue: (anime) => linkingResults[anime.id]?.tvdbTitle || '',
       sortFn: (a, b) => {
-        const titleA = linkingResults[anime.id]?.tvdbTitle || '';
+        const titleA = linkingResults[a.id]?.tvdbTitle || '';
         const titleB = linkingResults[b.id]?.tvdbTitle || '';
         return titleA.localeCompare(titleB);
       }
@@ -1001,9 +1001,6 @@ function SeasonalLinking() {
                               {selectedTVDBForManual.year && (
                                 <p className="text-sm text-gray-600">Year: {selectedTVDBForManual.year}</p>
                               )}
-                              {selectedTVDBForManual.status && (
-                                <p className="text-sm text-gray-600">Status: {selectedTVDBForManual.status}</p>
-                              )}
                               <p className="text-xs text-gray-500 mt-1">TVDB ID: {selectedTVDBForManual.id}</p>
                             </div>
                           </div>
@@ -1033,18 +1030,18 @@ function SeasonalLinking() {
                             {tvdbEpisodes.getEpisodesFromTheTVDB.reduce((acc: any[], episode: any) => {
                               const seasonKey = `season-${episode.seasonNumber}`;
                               if (!acc.find(s => s.key === seasonKey)) {
-                                const seasonEpisodes = tvdbEpisodes.getEpisodesFromTheTVDB.filter(
+                                const seasonEpisodes = tvdbEpisodes.getEpisodesFromTheTVDB?.filter(
                                   (ep: any) => ep.seasonNumber === episode.seasonNumber
-                                );
-                                const firstEpisode = seasonEpisodes.find((ep: any) => ep.aired);
-                                const lastEpisode = seasonEpisodes.slice().reverse().find((ep: any) => ep.aired);
+                                ) || [];
+                                const firstEpisode = seasonEpisodes.find((ep: any) => ep.airDate);
+                                const lastEpisode = seasonEpisodes.slice().reverse().find((ep: any) => ep.airDate);
 
                                 acc.push({
                                   key: seasonKey,
                                   number: episode.seasonNumber,
                                   episodeCount: seasonEpisodes.length,
-                                  firstAired: firstEpisode?.aired,
-                                  lastAired: lastEpisode?.aired
+                                  firstAired: firstEpisode?.airDate,
+                                  lastAired: lastEpisode?.airDate
                                 });
                               }
                               return acc;
@@ -1080,14 +1077,14 @@ function SeasonalLinking() {
                           }
                           return acc;
                         }, []).map((season: number) => {
-                          const seasonEpisodes = tvdbEpisodes.getEpisodesFromTheTVDB.filter(
+                          const seasonEpisodes = tvdbEpisodes.getEpisodesFromTheTVDB?.filter(
                             (ep: any) => ep.seasonNumber === season
-                          );
-                          const firstEpisode = seasonEpisodes.find((ep: any) => ep.aired);
+                          ) || [];
+                          const firstEpisode = seasonEpisodes.find((ep: any) => ep.airDate);
                           return (
                             <option key={season} value={season}>
                               Season {season} ({seasonEpisodes.length} episodes
-                              {firstEpisode?.aired && ` - ${format(new Date(firstEpisode.aired), 'MMM yyyy')}`})
+                              {firstEpisode?.airDate && ` - ${format(new Date(firstEpisode.airDate), 'MMM yyyy')}`})
                             </option>
                           );
                         })}
