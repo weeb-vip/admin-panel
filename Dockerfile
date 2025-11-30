@@ -1,6 +1,6 @@
 ARG NODE_VERSION=22.16.0
 
-FROM node:${NODE_VERSION}-alpine3.16 as build
+FROM node:${NODE_VERSION}-alpine3.22 as build
 
 WORKDIR /app
 ENV APP_CONFIG=staging
