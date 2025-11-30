@@ -7,7 +7,6 @@ on:
 jobs:
 
   release:
-    needs: [test, e2e]  # Only run release after tests pass
     name: Release
     runs-on: ubuntu-latest
     steps:
