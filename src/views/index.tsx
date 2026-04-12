@@ -94,7 +94,7 @@ function Index() {
     await findSameEntity(animeId).then((res) => {
       setAutolinkInProgress(false)
       console.log(res)
-      if (res?.item) {
+      if (res.matched) {
         setSelectedTVDBAnime(res.item)
         setSelectedSeason(parseInt(res.season, 10))
 
@@ -111,10 +111,21 @@ function Index() {
           }
         })
       } else {
+        let reason = 'No matching air dates found in TVDB search results';
+        if (res.candidates.length > 0) {
+          const expected = res.animeStartDate;
+          const candidateDetails = res.candidates.slice(0, 3).map(c => {
+            const seasonDates = Object.entries(c.seasons)
+              .map(([s, d]) => `S${s}: ${d}`)
+              .join(', ');
+            return `"${c.tvdbTitle}" (${seasonDates})`;
+          }).join(' | ');
+          reason = `Date mismatch — Expected: ${expected} · TVDB had: ${candidateDetails}`;
+        }
         setAutolinkResult({
           status: 'failed',
           details: {
-            matchReason: 'No matching air dates found in TVDB search results'
+            matchReason: reason
           }
         })
       }

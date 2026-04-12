@@ -1,7 +1,49 @@
 import {getAnimeById, getEpisodesFromTheTvdb, searchTheTVDB} from "./queries";
 import {format, parse, parseISO} from "date-fns";
 
-export const findSameEntity = async (animeId: string) => {
+// Extract just the yyyy-MM-dd portion from an ISO date string,
+// avoiding timezone shifts from parsing into a Date object.
+function extractDateString(isoDate: string): string {
+  // Handle ISO strings like "2024-01-10T00:00:00+09:00" or "2024-01-10"
+  const match = isoDate.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (match) return match[1];
+  // Fallback: parse and format in UTC-safe way
+  return format(parseISO(isoDate), 'yyyy-MM-dd');
+}
+
+// Check if two date strings are within ±1 day of each other
+function datesMatchWithTolerance(dateA: string, dateB: string): boolean {
+  if (dateA === dateB) return true;
+  const a = parse(dateA, 'yyyy-MM-dd', new Date(2000, 0, 1));
+  const b = parse(dateB, 'yyyy-MM-dd', new Date(2000, 0, 1));
+  const diffMs = Math.abs(a.getTime() - b.getTime());
+  return diffMs <= 86400000; // 1 day in ms
+}
+
+export interface AutolinkCandidate {
+  tvdbTitle: string;
+  tvdbId: string;
+  seasons: Record<string, string>; // season number -> start date (yyyy-MM-dd)
+}
+
+export interface AutolinkFailureInfo {
+  matched: false;
+  candidates: AutolinkCandidate[];
+  animeStartDate: string;
+}
+
+export interface AutolinkSuccessInfo {
+  matched: true;
+  item: any;
+  season: string;
+  searchMethod: string;
+  searchQuery: string;
+  originalTitle: string;
+}
+
+export type AutolinkResult = AutolinkSuccessInfo | AutolinkFailureInfo;
+
+export const findSameEntity = async (animeId: string): Promise<AutolinkResult> => {
   const anime = await getAnimeById(animeId).then((res) => {
     // @ts-ignore
     return res.anime
@@ -13,6 +55,9 @@ export const findSameEntity = async (animeId: string) => {
     titleRomaji: anime.titleRomaji,
     titleKanji: anime.titleKanji
   });
+
+  const candidates: AutolinkCandidate[] = [];
+  const seenTvdbIds = new Set<string>();
 
   // Generate search variants in order of preference
   const searchVariants = [];
@@ -88,35 +133,50 @@ export const findSameEntity = async (animeId: string) => {
         continue
       }
       console.log("ID", item.id)
-      const match = await getSeasonsAndStartDates(item.id).then((res) => {
-        // @ts-ignore
-        // find if a season start date matches with the airdate from anime
+      const res = await getSeasonsAndStartDates(item.id);
+
+      // Collect candidate info for failure reporting
+      if (!seenTvdbIds.has(item.id)) {
+        seenTvdbIds.add(item.id);
+        const seasonDates: Record<string, string> = {};
         for (const key in res) {
-          if (!Object.prototype.hasOwnProperty.call(res, key)) {
-            continue;
-          }
-
-          console.log("ANIME", anime)
-          // get only year, month and day
-          const seasonStart = format(res[key].start, 'yyyy-MM-dd')
-          const animeStart = format(parseISO(anime.startDate), 'yyyy-MM-dd')
-
-          // check if start matches anime start date
-          const matches = seasonStart === animeStart
-          if (matches) {
-            return {item, season: key}
+          if (Object.prototype.hasOwnProperty.call(res, key)) {
+            seasonDates[key] = format(res[key].start, 'yyyy-MM-dd');
           }
         }
-      })
+        if (Object.keys(seasonDates).length > 0) {
+          candidates.push({
+            tvdbTitle: item.title || item.id,
+            tvdbId: item.id,
+            seasons: seasonDates,
+          });
+        }
+      }
 
-      if (match) {
-        // Add search method information to the result
-        console.log(`✅ Match found using ${variant.type}: "${variant.query}"`);
-        return {
-          ...match,
-          searchMethod: variant.type,
-          searchQuery: variant.query,
-          originalTitle: variant.title
+      // find if a season start date matches with the airdate from anime
+      for (const key in res) {
+        if (!Object.prototype.hasOwnProperty.call(res, key)) {
+          continue;
+        }
+
+        console.log("ANIME", anime)
+        // get only year, month and day
+        const seasonStart = format(res[key].start, 'yyyy-MM-dd')
+        const animeStart = extractDateString(anime.startDate)
+
+        // check if start matches anime start date (±1 day tolerance for timezone differences)
+        const matches = datesMatchWithTolerance(seasonStart, animeStart)
+        if (matches) {
+          // Add search method information to the result
+          console.log(`✅ Match found using ${variant.type}: "${variant.query}"`);
+          return {
+            matched: true as const,
+            item,
+            season: key,
+            searchMethod: variant.type,
+            searchQuery: variant.query,
+            originalTitle: variant.title
+          }
         }
       }
     }
@@ -124,7 +184,8 @@ export const findSameEntity = async (animeId: string) => {
 
   // No matches found with any search variant
   console.log("❌ No matches found with any search variant");
-  return null
+  const animeStart = anime.startDate ? extractDateString(anime.startDate) : 'unknown';
+  return { matched: false as const, candidates, animeStartDate: animeStart }
 
 }
 
