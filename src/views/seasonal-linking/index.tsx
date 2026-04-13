@@ -400,7 +400,7 @@ function SeasonalLinking() {
 
       const result = await findSameEntity(anime.id);
 
-      if (result?.item) {
+      if (result.matched) {
         const matchMethod = result.searchMethod ? ` via ${result.searchMethod}` : '';
         const searchInfo = result.searchQuery ? ` (searched: "${result.searchQuery}")` : '';
 
@@ -417,19 +417,28 @@ function SeasonalLinking() {
           }
         }));
       } else {
-        // Provide more detailed failure information
-        const animeTitle = anime.titleEn || anime.titleJp || 'Unknown';
-        const searchQuery = animeTitle.replace(/(season|s\d+|\d+)/gi, "").trim();
-        const searchMessage = searchQuery !== animeTitle
-          ? `Search query: "${searchQuery}" (cleaned from "${animeTitle}")`
-          : `Search query: "${searchQuery}"`;
+        const expectedDate = anime.startDate ? format(new Date(anime.startDate), 'yyyy-MM-dd') : 'Unknown';
+
+        let message = `Failed: No TVDB match. Expected: ${expectedDate}`;
+
+        if (result.candidates.length > 0) {
+          const candidateDetails = result.candidates.slice(0, 3).map(c => {
+            const seasonDates = Object.entries(c.seasons)
+              .map(([s, d]) => `S${s}: ${d}`)
+              .join(', ');
+            return `"${c.tvdbTitle}" (${seasonDates})`;
+          }).join(' | ');
+          message += ` · TVDB had: ${candidateDetails}`;
+        } else {
+          message += ' · No TVDB results found';
+        }
 
         setLinkingResults(prev => ({
           ...prev,
           [anime.id]: {
             ...prev[anime.id],
             status: 'failed',
-            message: `Failed: No TVDB match found. ${searchMessage}. Expected air date: ${anime.startDate ? format(new Date(anime.startDate), 'yyyy-MM-dd') : 'Unknown'}`,
+            message,
           }
         }));
       }
