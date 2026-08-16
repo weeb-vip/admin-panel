@@ -144,7 +144,7 @@ function SeasonalLinking() {
         <td className="px-4 py-3">
           <div className="flex items-center space-x-3">
             <img
-              src={anime.imageUrl || getSafeImageUrl(anime.titleEn || anime.titleJp, 'weeb')}
+              src={anime.imageUrl || getSafeImageUrl(anime.id, 'weeb')}
               alt={anime.titleEn}
               className="w-10 h-14 object-cover rounded"
               onError={({currentTarget}) => {

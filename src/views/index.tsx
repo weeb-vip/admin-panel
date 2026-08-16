@@ -179,11 +179,11 @@ function Index() {
                 <h3 className="font-medium text-gray-900 mb-3">Selected Anime</h3>
                 <div className="flex space-x-4">
                   <img
-                    src={getSafeImageUrl(selectedMALAnime.title_en || selectedMALAnime.title_jp, 'weeb')}
+                    src={getSafeImageUrl(selectedMALAnime.id, 'weeb')}
                     alt={selectedMALAnime.title_en}
                     className="w-20 h-28 object-cover rounded"
 
-                    data-raw-src={getSafeImageUrl(selectedMALAnime.title_en || selectedMALAnime.title_jp, 'weeb')}
+                    data-raw-src={getSafeImageUrl(selectedMALAnime.id, 'weeb')}
                     onError={({currentTarget}) => {
                       currentTarget.onerror = null;
                       currentTarget.src = "/assets/not found.jpg";
