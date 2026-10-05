@@ -566,12 +566,25 @@ function SeasonalLinking() {
   };
 
   // Save a link
+  /**
+   * The name the link is saved under. `SaveLinkInput.name` is required by
+   * the API, and a result built by the auto-linker spreads a previous entry
+   * that may never have had `animeTitle`; an undefined field is dropped from
+   * the JSON and the save fails with "Field name ... was not provided". The
+   * loaded anime list is the source of truth, the result's titles the backup.
+   */
+  const nameFor = (animeId: string): string => {
+    const anime = animeData?.animeBySeasons?.find((a: any) => a?.id === animeId);
+    const result = linkingResults[animeId];
+    return anime?.titleEn || anime?.titleJp || result?.animeTitle || result?.tvdbTitle || '';
+  };
+
   const saveLink = async (animeId: string) => {
     const result = linkingResults[animeId];
     if (!result || !result.tvdbId || !result.season) return;
 
     try {
-      await mutateSaveLink(animeId, result.tvdbId, result.season, result.animeTitle).queryFn();
+      await mutateSaveLink(animeId, result.tvdbId, result.season, nameFor(animeId)).queryFn();
       setLinkingResults(prev => ({
         ...prev,
         [animeId]: {
@@ -603,7 +616,7 @@ function SeasonalLinking() {
       if (!result.tvdbId || !result.season) continue;
 
       try {
-        await mutateSaveLink(animeId, result.tvdbId, result.season, result.animeTitle).queryFn();
+        await mutateSaveLink(animeId, result.tvdbId, result.season, nameFor(animeId)).queryFn();
         setLinkingResults(prev => ({
           ...prev,
           [animeId]: {
@@ -690,7 +703,8 @@ function SeasonalLinking() {
         manualSearchAnime.id,
         selectedTVDBForManual.id,
         selectedSeasonForManual,
-        manualSearchAnime.titleEn || manualSearchAnime.titleJp
+        manualSearchAnime.titleEn || manualSearchAnime.titleJp || nameFor(manualSearchAnime.id)
+          || selectedTVDBForManual.translations?.find((t: any) => t?.key === "eng")?.value || selectedTVDBForManual.title
       ).queryFn();
 
       setLinkingResults(prev => ({

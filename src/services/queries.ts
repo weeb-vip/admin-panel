@@ -54,14 +54,19 @@ export const getSearchResults = (query: string) => ({
 export const mutateSaveLink = (animeID: string, tvdbId: string, season: number, name: string) => ({
   queryKey: ["saveLink", animeID, tvdbId, season],
   // @ts-ignore
-  queryFn: async () => AuthenticatedClient().request<SaveLinkMutation>(saveLink, {
+  queryFn: async () => {
+    // Required by the API. An undefined name is dropped from the JSON and
+    // answered with a schema error that says nothing about which anime.
+    if (!name) throw new Error(`No title known for anime ${animeID}; cannot save the link`);
+    return AuthenticatedClient().request<SaveLinkMutation>(saveLink, {
     input: {
       animeID: animeID,
       thetvdbID: tvdbId,
       season: season,
       name: name,
     }
-  })
+    });
+  }
 })
 
 export const fetchTheTVDBEpisodes = (thetvdbID: string) => ({
